@@ -1,0 +1,36 @@
+---
+- name: Create directory for Postgres
+  ansible.builtin.file:
+    state: directory
+    path: /etc/postgres
+    mode: 0770
+
+- name: Fetch password secret
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-password"
+  register: postgres_password
+
+- name: Fetch user secret
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-user"
+  register: postgres_user
+
+- name: Fetch database secret
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-database"
+  register: postgres_database
+
+- name: Start Postgres container
+  ansible.builtin.docker_container:
+    name: postgres
+    image: "postgres:17.0"
+    state: started
+    volumes:
+      - "/etc/postgres:/etc/pgdata"
+    networks:
+      - name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
+    env:
+      POSTGRES_PASSWORD: "{{ postgres_password.stdout }}"
+      POSTGRES_USER: "{{ postgres_user.stdout }}"
+      POSTGRES_DB: "{{ postgres_database.stdout }}"
+      PGDATA: /etc/pgdata
+    ports:
+      - "5432:5432"
+    restart_policy: unless-stopped

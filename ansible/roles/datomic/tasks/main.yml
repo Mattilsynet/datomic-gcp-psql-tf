@@ -1,0 +1,64 @@
+---
+- name: Create directory for Datomic
+  ansible.builtin.file:
+    state: directory
+    path: /etc/datomic
+    mode: 0770
+
+- name: Prepare datomic-vm IP for use in transactor.properties
+  local_action: ansible.builtin.command gcloud compute instances describe datomic-vm --zone=europe-north1-a --format='get(networkInterfaces[0].networkIP)'
+  register: datomic_vm_ip
+  become: false
+
+- name: Prepare password secret for use in transactor.properties
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-password"
+  register: postgres_password
+
+- name: Prepare user secret for use in transactor.properties
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-user"
+  register: postgres_user
+
+- name: Prepare database secret for use in transactor.properties
+  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-database"
+  register: postgres_database
+
+- name: Create transactor.properties from template
+  ansible.builtin.template:
+    src: transactor.properties.j2
+    dest: /etc/datomic/transactor.properties
+
+- name: Ensure psql is installed
+  ansible.builtin.apt:
+    name:
+      - postgresql-client
+    state: present
+
+- name: Create create-table.sh from template
+  ansible.builtin.template:
+    src: create-table.sh.j2
+    dest: /etc/datomic/create-table.sh
+    mode: '0755'
+
+- name: Upload SQL to create initial Datomic DB
+  ansible.builtin.template:
+    src: create-table.sql.j2
+    dest: /etc/datomic/create-table.sql
+  register: uploaded_sql
+
+- name: Create table
+  ansible.builtin.command: /etc/datomic/create-table.sh
+
+- name: Start Datomic container
+  ansible.builtin.docker_container:
+    name: datomic
+    image: "{{ hostvars[inventory_hostname]['datomic_docker_image'] }}"
+    state: started
+    networks:
+      - name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
+    volumes:
+     - "/etc/datomic:/etc/datomic:ro"
+    ports:
+     - "4337:4337"
+     - "4338:4338"
+     - "4339:4339"
+    restart_policy: unless-stopped
