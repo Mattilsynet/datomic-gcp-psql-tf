@@ -23,7 +23,7 @@ resource "google_compute_subnetwork" "datomic_subnet" {
 
 resource "google_project_service" "vpcaccess" {
   provider = google-beta
-  project = local.project_id
+  project = var.project_id
   service = "vpcaccess.googleapis.com"
   disable_on_destroy = false
 
@@ -52,31 +52,22 @@ resource "google_service_account" "datomic_sa" {
   account_id = "${var.name}-sa"
 }
 
-resource "google_project_iam_binding" "secretmanager_access" {
+resource "google_project_iam_member" "secretmanager_access" {
   project = var.project_id
   role = "roles/secretmanager.secretAccessor"
-
-  members = [
-    "serviceAccount:${google_service_account.datomic_sa.email}"
-  ]
+  member = "serviceAccount:${google_service_account.datomic_sa.email}"
 }
 
-resource "google_project_iam_binding" "secretmanager_viewer" {
+resource "google_project_iam_member" "secretmanager_viewer" {
   project = var.project_id
   role = "roles/secretmanager.viewer"
-
-  members = [
-    "serviceAccount:${google_service_account.datomic_sa.email}"
-  ]
+  member = "serviceAccount:${google_service_account.datomic_sa.email}"
 }
 
-resource "google_project_iam_binding" "compute_viewer" {
+resource "google_project_iam_member" "compute_viewer" {
   project = var.project_id
   role = "roles/compute.viewer"
-
-  members = [
-    "serviceAccount:${google_service_account.datomic_sa.email}"
-  ]
+  member = "serviceAccount:${google_service_account.datomic_sa.email}"
 }
 
 # Datomic VM instance
@@ -141,9 +132,9 @@ resource "google_compute_instance" "datomic_server" {
   metadata_startup_script = "#!/bin/bash\necho Hello, World! > /home/username/gce-test.txt"
 }
 
-resource "google_project_iam_binding" "iam_binding_iap_tunnel_accessor" {
+resource "google_project_iam_member" "iap_tunnel_accessor" {
   project = var.project_id
-  members = var.iap_access_members
+  member = var.iap_access_member
   role = "roles/iap.tunnelResourceAccessor"
 }
 
@@ -284,7 +275,7 @@ resource "google_secret_manager_secret_version" "psql_user" {
   secret_data = "${var.postgres_user}"
 }
 
-resource "google_secret_manager_secret_version" "psql_user" {
-  secret = google_secret_manager_secret.psql_user.id
+resource "google_secret_manager_secret_version" "psql_database" {
+  secret = google_secret_manager_secret.psql_database.id
   secret_data = "${var.postgres_database}"
 }
