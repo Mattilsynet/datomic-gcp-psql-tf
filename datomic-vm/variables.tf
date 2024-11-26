@@ -21,6 +21,12 @@ variable "vm_machine_type" {
   default = "e2-standard-2"
 }
 
+variable "ssd_size" {
+  type = number
+  description = "The number of gigabytes to allocate on the external disk"
+  default = 10
+}
+
 variable "iap_access_member" {
   type = string
   description = "Which member should have access to the Datomic VPC IAP accessor"

@@ -80,6 +80,14 @@ resource "google_compute_address" "datomic_server_ip" {
   subnetwork = google_compute_subnetwork.datomic_subnet.self_link
 }
 
+resource "google_compute_disk" "disk" {
+  project = var.project_id
+  name = "${var.name}-data-disk"
+  type = "pd-ssd"
+  zone = "${var.region}-a"
+  size = var.ssd_size
+}
+
 resource "google_compute_instance" "datomic_server" {
   project = var.project_id
 
@@ -129,7 +137,33 @@ resource "google_compute_instance" "datomic_server" {
     ]
   }
 
-  metadata_startup_script = "#!/bin/bash\necho Hello, World! > /home/username/gce-test.txt"
+  attached_disk {
+    source = google_compute_disk.disk.self_link
+    device_name = "datomic-data-disk"
+    mode = "READ_WRITE"
+  }
+
+  metadata_startup_script = <<EOT
+#!/bin/bash
+
+# Ensure the disk is formatted (only needed for a new disk)
+if ! lsblk | grep -q "datomic-data-disk"; then
+  mkfs.ext4 -F /dev/disk/by-id/google-datomic-data-disk
+fi
+
+# Create a directory for mounting
+mkdir -p /mnt/data
+
+# Add to /etc/fstab if not already present for future reboots
+if ! grep -q "/dev/disk/by-id/google-datomic-data-disk /mnt/data" /etc/fstab; then
+  echo "/dev/disk/by-id/google-datomic-data-disk /mnt/data ext4 defaults 0 0" >> /etc/fstab
+fi
+
+# Mount the disk immediately if not already mounted
+if ! mountpoint -q /mnt/data; then
+  mount /dev/disk/by-id/google-datomic-data-disk /mnt/data
+fi
+EOT
 }
 
 resource "google_project_iam_member" "iap_tunnel_accessor" {

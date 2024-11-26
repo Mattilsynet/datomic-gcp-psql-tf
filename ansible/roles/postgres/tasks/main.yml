@@ -2,7 +2,7 @@
 - name: Create directory for Postgres
   ansible.builtin.file:
     state: directory
-    path: /etc/postgres
+    path: /mnt/data/postgres
     mode: 0770
 
 - name: Fetch password secret
@@ -19,7 +19,7 @@
     image: "postgres:17.0"
     state: started
     volumes:
-      - "/etc/postgres:/etc/pgdata"
+      - "/mnt/data/postgres:/etc/pgdata"
     networks:
       - name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
     env:
