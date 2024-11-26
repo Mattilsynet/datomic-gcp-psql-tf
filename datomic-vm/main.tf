@@ -252,19 +252,6 @@ resource "google_secret_manager_secret" "psql_user" {
   }
 }
 
-resource "google_secret_manager_secret" "psql_database" {
-  project = var.project_id
-  secret_id = "${var.name}-postgres-database"
-
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
-}
-
 resource "google_secret_manager_secret_version" "psql_password" {
   secret = google_secret_manager_secret.psql_password.id
   secret_data = random_string.password.result
@@ -272,10 +259,5 @@ resource "google_secret_manager_secret_version" "psql_password" {
 
 resource "google_secret_manager_secret_version" "psql_user" {
   secret = google_secret_manager_secret.psql_user.id
-  secret_data = "${var.postgres_user}"
-}
-
-resource "google_secret_manager_secret_version" "psql_database" {
-  secret = google_secret_manager_secret.psql_database.id
-  secret_data = "${var.postgres_database}"
+  secret_data = "${var.name}"
 }

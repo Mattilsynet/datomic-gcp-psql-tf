@@ -31,15 +31,3 @@ variable "name" {
   description = "Name of database, used as prefix for uniquely named resources"
   default = "datomic"
 }
-
-variable "postgres_database" {
-  type = string
-  description = "Name of postgres database"
-  default = "datomic"
-}
-
-variable "postgres_user" {
-  type = string
-  description = "Name of postgres user"
-  default = "datomic"
-}

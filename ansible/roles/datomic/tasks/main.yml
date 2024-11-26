@@ -12,15 +12,11 @@
 
 - name: Prepare password secret for use in transactor.properties
   ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-password"
-  register: postgres_password
+  register: db_password
 
 - name: Prepare user secret for use in transactor.properties
   ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-user"
-  register: postgres_user
-
-- name: Prepare database secret for use in transactor.properties
-  ansible.builtin.command: gcloud secrets versions access latest --secret "{{ hostvars[inventory_hostname]['instance_name'] }}-postgres-database"
-  register: postgres_database
+  register: db_user
 
 - name: Create transactor.properties from template
   ansible.builtin.template:

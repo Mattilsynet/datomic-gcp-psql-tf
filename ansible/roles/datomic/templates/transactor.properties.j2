@@ -8,9 +8,9 @@ alt-host={{ datomic_vm_ip.stdout }}
 ###################################################################
 # See https://docs.datomic.com/on-prem/storage.html
 
-sql-url=jdbc:postgresql://postgres:5432/{{ postgres_database.stdout }}
-sql-user={{ postgres_user.stdout }}
-sql-password={{ postgres_password.stdout }}
+sql-url=jdbc:postgresql://postgres:5432/datomic
+sql-user={{ db_user.stdout }}
+sql-password={{ db_password.stdout }}
 
 ## The Postgres driver is included with Datomic. For other SQL
 ## databases, you will need to install the driver on the
