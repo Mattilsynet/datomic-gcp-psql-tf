@@ -46,7 +46,7 @@ touch settings.yml
 ```
 
 Configure Terraform to your liking. The state backend is up to you, but you must
-include the google provider configs:
+include the google providers config:
 
 ```yml
 # settings.yml
@@ -92,8 +92,7 @@ module "datomic" {
 
 `iap_access_members` is a list of users or groups of users who should be allowed
 to use the IAP SSH tunnel into the VM. `name` is used to prefix some names that
-need to be unique within the managed environment. Specifically, your VM instance
-will use this exact name.
+need to be unique within the managed environment.
 
 Now run `terraform init` followed by `terraform apply`. This will take a while.
 
@@ -101,8 +100,7 @@ Now run `terraform init` followed by `terraform apply`. This will take a while.
 
 Clone this repo. You will need a Docker repository to push the image to. Follow
 the official documentation to [create a GCP Docker
-repository](https://cloud.google.com/build/docs/build-push-docker-image) (or use
-the Terraform snippet below).
+repository](https://cloud.google.com/build/docs/build-push-docker-image).
 
 Then build, tag and push the image:
 
@@ -174,24 +172,27 @@ gcloud compute ssh \
   datomic-vm
 ```
 
-Then run the Ansible collection.
+Then run the Ansible collection:
+
+```sh
+cd ansible
+ansible-playbook -i inventory/datomic.gcp.yaml playbooks/setup-datomic.yml
+```
 
 ## Connecting to the transactor
 
-To connect to the transactor, you need the Postgres user name and password, as
-well as the database. The Terraform module stores these as secrets:
+To connect to the transactor, you need the Postgres user name and password. The
+Terraform module stores these as secrets:
 
 ```sh
-name=datomic
-pwd=$(gcloud secrets versions access latest --secret "$name-postgres-password")
-user=$(gcloud secrets versions access latest --secret "$name-postgres-user")
-database=$(gcloud secrets versions access latest --secret "$name-postgres-database")
+pwd=$(gcloud secrets versions access latest --secret "datomic-postgres-password")
+user=$(gcloud secrets versions access latest --secret "datomic-postgres-user")
 ```
 
 Then use a connection string like:
 
 ```clj
-"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?user=datomic&password=..."
+"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?user=datomic-user&password=..."
 ```
 
 ## Local access to production
@@ -205,26 +206,24 @@ order to reach it. You can add it as an alias on your en0 interface:
 sudo ifconfig en0 alias 10.0.0.2 netmask 255.255.255.0
 ```
 
-Now run an SSH tunnel to the Datomic VM on this IP:
+Next, run an SSH tunnel to the Datomic VM on this IP:
 
 ```sh
-name=datomic
 gcloud compute start-iap-tunnel \
   --local-host-port 10.0.0.2:4337 \
   --zone europe-north1-a \
   --project project-id \
-  $name-vm 4337
+  datomic-vm 4337
 ```
 
-In another shell, run a proxy for Postgres:
+In another terminal, run an SSH tunnel to the VM on the Postgres IP:
 
 ```sh
-name=datomic
 gcloud compute start-iap-tunnel \
   --local-host-port 10.0.0.2:5432 \
   --zone europe-north1-a \
   --project project-id \
-  $name-vm 5432
+  datomic-vm 5432
 ```
 
 Adjust project id and zone as appropriate. With the two proxies established, you
@@ -232,5 +231,5 @@ should now be able to connect to the transactor with the following connection
 string:
 
 ```clj
-"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?host=10.0.0.2&user=datomic-user&password=..."
+"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?user=datomic-user&password=..."
 ```
