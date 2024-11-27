@@ -172,11 +172,25 @@ gcloud compute ssh \
   datomic-vm
 ```
 
+Make sure you are not targeting more hosts than intended:
+
+```sh
+cd ansible
+ansible-playbook -i inventory/datomic.gcp.yaml --list-hosts playbooks/setup-datomic.yml
+```
+
+If this lists more hosts than expected (e.g., your project has other VMs in it),
+add a `--limit` to the following command to match the hostname of the transactor
+VM.
+
 Then run the Ansible collection:
 
 ```sh
 cd ansible
-ansible-playbook -i inventory/datomic.gcp.yaml playbooks/setup-datomic.yml
+ansible-playbook \
+  -i inventory/datomic.gcp.yaml \
+  --limit datomic-vm \ # Avoid running on other VMs in the project
+  playbooks/setup-datomic.yml
 ```
 
 ## Connecting to the transactor
@@ -192,15 +206,18 @@ user=$(gcloud secrets versions access latest --secret "datomic-postgres-user")
 Then use a connection string like:
 
 ```clj
-"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?user=datomic-user&password=..."
+"datomic:sql://datomic-db-name?jdbc:postgresql://10.0.0.2:5432/datomic?user=$user&password=$pwd"
 ```
+
+This requires the VPC peering module and will work from e.g. CloudRun services.
 
 ## Local access to production
 
 When a Datomic peer establishes a connection, it will go to the storage to find
 the location of the transactor. The transactor will give its location as
-`10.0.0.2`, thus we need for that IP to resolve from our local machine in
-order to reach it. You can add it as an alias on your en0 interface:
+`datomic` (reachable over the Docker network on the transactor VM) and
+`10.0.0.2` (elsewhere), thus we need for that IP to resolve from our local
+machine in order to reach it. You can add it as an alias on your en0 interface:
 
 ```sh
 sudo ifconfig en0 alias 10.0.0.2 netmask 255.255.255.0
@@ -231,5 +248,52 @@ should now be able to connect to the transactor with the following connection
 string:
 
 ```clj
-"datomic:sql://datomic-db-name?jdbc:postgresql:///datomic?user=datomic-user&password=..."
+"datomic:sql://datomic-db-name?jdbc:postgresql://10.0.0.2:5432/postgres?user=$user&password=$pwd"
+```
+
+## Backup and restore
+
+You can run backup and restore locally on the transactor VM. Start by SSH-ing
+into the machine:
+
+```sh
+gcloud compute ssh \
+    --tunnel-through-iap \
+    --zone europe-north1-a \ # Change as required
+    --project project-id \   # Change as required
+    transactor-vm            # Use the instance name from above
+```
+
+Once inside do a `sudo su`. Now you can run backups like so:
+
+```sh
+mkdir /mnt/data/my-db-backup
+
+docker run --rm \
+    --volume /mnt/data/my-db-backup:/etc/backup \
+    --network datomic-network \
+    --entrypoint "./bin/datomic" \
+    # Replace with your transactor image
+    europe-north1-docker.pkg.dev/artifacts-xyz/team/datomic:latest \
+    -Xmx4g -Xms4g \
+    backup-db \
+    "datomic:sql://my-db?jdbc:postgresql://postgres:5432/datomic?user=datomic-user&password=..." \
+    file:///etc/backup
+```
+
+Restore databases like so:
+
+```sh
+mkdir /mnt/data/my-db-backup
+
+docker run --rm \
+    --volume /mnt/data/my-db-backup:/etc/backup \
+    --network datomic-network \
+    --entrypoint "./bin/datomic" \
+    # Replace with your transactor image
+    europe-north1-docker.pkg.dev/artifacts-xyz/team/datomic:latest \
+    -Xmx4g -Xms4g \
+    restore-db \
+    file:///etc/backup \
+    "datomic:sql://my-db?jdbc:postgresql://postgres:5432/datomic?user=datomic-user&password=..."
 ```
