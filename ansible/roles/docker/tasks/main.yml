@@ -44,4 +44,4 @@
 
 - name: Create a network
   community.docker.docker_network:
-    name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
+    name: "datomic-network"

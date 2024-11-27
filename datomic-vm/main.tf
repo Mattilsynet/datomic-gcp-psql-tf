@@ -293,5 +293,5 @@ resource "google_secret_manager_secret_version" "psql_password" {
 
 resource "google_secret_manager_secret_version" "psql_user" {
   secret = google_secret_manager_secret.psql_user.id
-  secret_data = "${var.name}"
+  secret_data = "datomic-user"
 }

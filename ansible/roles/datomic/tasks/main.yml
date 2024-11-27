@@ -50,7 +50,7 @@
     image: "{{ hostvars[inventory_hostname]['datomic_docker_image'] }}"
     state: started
     networks:
-      - name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
+      - name: "datomic-network"
     volumes:
      - "/mnt/data/datomic:/etc/datomic:ro"
     ports:

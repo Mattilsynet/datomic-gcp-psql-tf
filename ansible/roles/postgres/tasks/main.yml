@@ -21,7 +21,7 @@
     volumes:
       - "/mnt/data/postgres:/etc/pgdata"
     networks:
-      - name: "{{ hostvars[inventory_hostname]['instance_name'] }}-network"
+      - name: "datomic-network"
     env:
       POSTGRES_PASSWORD: "{{ db_password.stdout }}"
       POSTGRES_USER: "{{ db_user.stdout }}"
