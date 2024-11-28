@@ -230,6 +230,21 @@ resource "google_compute_firewall" "gcf_psql_ingress_psql" {
   source_ranges = ["0.0.0.0/0"]
 }
 
+# Allow connecting to Memcached
+
+resource "google_compute_firewall" "gcf_memcached_ingress" {
+  project = var.project_id
+  name = "${var.name}-gcf-memcached-ingress"
+  network = google_compute_network.datomic_vpc.id
+  direction = "INGRESS"
+  allow {
+    protocol = "tcp"
+    ports = ["11211"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+
 # These are required for the machine to reach the internet
 
 resource "google_compute_router" "datomic_router" {

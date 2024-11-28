@@ -5,4 +5,5 @@
    - ntp
    - docker
    - postgres
+   - memcached
    - datomic

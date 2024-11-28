@@ -1,0 +1,13 @@
+---
+- name: Start Memcached container
+  ansible.builtin.docker_container:
+    name: memcached
+    image: "memcached:1.6.32-alpine"
+    state: started
+    networks:
+      - name: "datomic-network"
+    ports:
+      - "11211:11211"
+    restart_policy: unless-stopped
+    command:
+      - --memory-limit="{{ hostvars[inventory_hostname]['memcached_memory'] }}"

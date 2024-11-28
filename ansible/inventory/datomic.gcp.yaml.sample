@@ -13,6 +13,7 @@ compose:
   ansible_host: name
   datomic_docker_image: "'europe-north1-docker.pkg.dev/myproject-1111/repo/datomic:latest'"
   gcp_repo_host: "'europe-north1-docker.pkg.dev'"
+  memcached_memory: "'8096'"
   # Set to whatever you used for name in the Terraform module.
   # Yes, the double set of quotes are necessary, otherwise the GCP inventory
   # plugin will ignore the variable.
