@@ -1,7 +1,8 @@
 # Datomic on GCP
 
 A Terraform module, a Docker image, and an Ansible collection to run a Datomic
-transactor on Google Cloud Platform (GCP) with a local Postgres storage backend.
+transactor on Google Cloud Platform (GCP) with a local Postgres storage backend
+and memcached.
 
 ## Overview
 
@@ -83,16 +84,13 @@ module "datomic" {
   project_id = local.project_id
   region = local.region
   name = "datomic"
-  iap_access_members = [
-    "group:my-team@my-corp.com"
-  ]
-  depends_on = [google_project_service.vpcaccess]
+  iap_access_member = ["group:my-team@my-corp.com"]
 }
 ```
 
-`iap_access_members` is a list of users or groups of users who should be allowed
-to use the IAP SSH tunnel into the VM. `name` is used to prefix some names that
-need to be unique within the managed environment.
+`iap_access_member` is a user or group of users who should be allowed to use the
+IAP SSH tunnel into the VM. `name` is used to prefix some names that need to be
+unique within the managed environment.
 
 Now run `terraform init` followed by `terraform apply`. This will take a while.
 
@@ -196,7 +194,8 @@ ansible-playbook \
 ## Connecting to the transactor
 
 To connect to the transactor, you need the Postgres user name and password. The
-Terraform module stores these as secrets:
+Terraform module stores these as secrets. Note that the secret names will start
+with the `name` you used in the Terraform module:
 
 ```sh
 pwd=$(gcloud secrets versions access latest --secret "datomic-postgres-password")
@@ -249,6 +248,16 @@ string:
 
 ```clj
 "datomic:sql://datomic-db-name?jdbc:postgresql://10.0.0.2:5432/postgres?user=$user&password=$pwd"
+```
+
+If you also want to use memcached, run a third proxy:
+
+```sh
+gcloud compute start-iap-tunnel \
+  --local-host-port 10.0.0.2:11211 \
+  --zone europe-north1-a \
+  --project project-id \
+  datomic-vm 11211
 ```
 
 ## Backup and restore
