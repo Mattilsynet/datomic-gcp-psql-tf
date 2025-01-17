@@ -10,4 +10,4 @@
       - "11211:11211"
     restart_policy: unless-stopped
     command:
-      - --memory-limit="{{ hostvars[inventory_hostname]['memcached_memory'] }}"
+      - --memory-limit={{ hostvars[inventory_hostname]['memcached_memory'] }}
