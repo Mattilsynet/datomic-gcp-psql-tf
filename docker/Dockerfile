@@ -1,10 +1,10 @@
-FROM clojure:temurin-21-tools-deps-1.11.3.1456-jammy
-ARG datomic_version=1.0.7075
+FROM eclipse-temurin:21-jre-alpine
+ARG datomic_version=1.0.7394
 
 ENV DATOMIC_VERSION $datomic_version
 ENV DATOMIC_HOME /opt/datomic-pro-$datomic_version
 
-RUN apt-get update && apt-get install -y unzip && apt-get install -y wget
+RUN apk add --no-cache unzip wget
 
 RUN wget https://datomic-pro-downloads.s3.amazonaws.com/${DATOMIC_VERSION}/datomic-pro-${DATOMIC_VERSION}.zip -O /tmp/datomic.zip \
   && unzip /tmp/datomic.zip -d /opt \
