@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jre-noble
-ARG datomic_version=1.0.7394
+ARG datomic_version=1.0.7622
 
 ENV DATOMIC_VERSION="$datomic_version"
 ENV DATOMIC_HOME="/opt/datomic-pro-$datomic_version"
