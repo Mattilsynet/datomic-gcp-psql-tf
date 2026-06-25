@@ -1,10 +1,10 @@
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-noble
 ARG datomic_version=1.0.7394
 
-ENV DATOMIC_VERSION $datomic_version
-ENV DATOMIC_HOME /opt/datomic-pro-$datomic_version
+ENV DATOMIC_VERSION="$datomic_version"
+ENV DATOMIC_HOME="/opt/datomic-pro-$datomic_version"
 
-RUN apk add --no-cache unzip wget
+RUN apt-get update && apt-get install -y unzip && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://datomic-pro-downloads.s3.amazonaws.com/${DATOMIC_VERSION}/datomic-pro-${DATOMIC_VERSION}.zip -O /tmp/datomic.zip \
   && unzip /tmp/datomic.zip -d /opt \
