@@ -1,5 +1,5 @@
-FROM eclipse-temurin:21-jre-noble
-ARG datomic_version=1.0.7622
+FROM eclipse-temurin:25-jre-noble
+ARG datomic_version=1.0.7745
 
 ENV DATOMIC_VERSION="$datomic_version"
 ENV DATOMIC_HOME="/opt/datomic-pro-$datomic_version"
@@ -16,4 +16,4 @@ RUN echo DATOMIC HOME: $DATOMIC_HOME
 VOLUME /etc/datomic
 VOLUME /log
 
-ENTRYPOINT ["./bin/transactor", "-Xmx4g", "-Xms4g", "-Ddatomic.printConnectionInfo=true", "/etc/datomic/transactor.properties"]
+ENTRYPOINT ["./bin/transactor", "-Xmx4g", "-Xms4g", "--enable-native-access=ALL-UNNAMED", "--sun-misc-unsafe-memory-access=allow", "-Ddatomic.printConnectionInfo=true", "/etc/datomic/transactor.properties"]
